@@ -1,0 +1,63 @@
+# Local stack: TimescaleDB, the backend (API + orchestrator in one process)
+# and the dashboard.
+#
+# The inference server is deliberately NOT in here. llama.cpp needs the Metal
+# GPU, and a Linux container on macOS cannot reach it — running the model in a
+# container would fall back to CPU and be unusably slow. Run `llama-server` on
+# the host and let the backend reach it through host.docker.internal.
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: paper
+      POSTGRES_PASSWORD: paper
+      POSTGRES_DB: papertrade
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paper -d papertrade"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - .env
+    environment:
+      # Overrides the .env value: inside the network the database is `db`.
+      DATABASE_URL: postgresql+asyncpg://paper:paper@db:5432/papertrade
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:8080/v1}
+      CORS_ORIGINS: http://localhost:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    extra_hosts:
+      # Docker Desktop provides this automatically; declaring it keeps Linux
+      # hosts working too.
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # A build arg, not an environment variable: Next inlines NEXT_PUBLIC_*
+        # into the client bundle at build time, so setting it at runtime does
+        # nothing. The value is the URL the *browser* will call, which is the
+        # published port on the host — not the compose service name.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:

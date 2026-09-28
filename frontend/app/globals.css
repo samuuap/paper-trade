@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/*
+ * Dark-only by design: the agent colours are stored as one hex each in the
+ * database and were validated against the dark surface below. Shipping a light
+ * mode would mean shipping an unvalidated palette. See lib/theme.ts.
+ */
+@theme {
+  --color-plane: #0d0d0d;
+  --color-card: #1a1a19;
+  --color-raised: #232321;
+
+  --color-ink: #ffffff;
+  --color-ink-secondary: #c3c2b7;
+  --color-ink-muted: #898781;
+
+  --color-grid: #2c2c2a;
+  --color-axis: #383835;
+  --color-hairline: rgba(255, 255, 255, 0.1);
+
+  --color-up: #0ca30c;
+  --color-down: #d03b3b;
+  --color-warning: #fab219;
+  --color-serious: #ec835a;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-plane);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Columns of figures have to line up to be scannable; prose does not. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
