@@ -131,6 +131,18 @@ async def test_equity_curves_include_the_rebased_benchmark(client):
     )
 
 
+async def test_equity_series_come_back_in_a_stable_order(client):
+    """The dashboard styles the grey baselines by arrival order.
+
+    An unordered query lets the database return them either way round, and the
+    two reference curves would then swap dash patterns between reloads.
+    """
+    await cycle.snapshot_all_equity(Phase.OPEN)
+    first = [s["slug"] for s in (await client.get(f"{API}/equity")).json()["series"]]
+    second = [s["slug"] for s in (await client.get(f"{API}/equity")).json()["series"]]
+    assert first == second == sorted(first)
+
+
 async def test_the_benchmark_is_clipped_to_the_window_the_agents_cover(client):
     """Regression: a year of SPY against a day of equity squashes the chart.
 

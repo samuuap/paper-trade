@@ -11,6 +11,9 @@ venv/
 .env
 .env.local
 
+# local run artefacts
+.local-logs/
+
 # databases and dumps
 *.db
 *.sqlite3

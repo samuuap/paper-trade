@@ -178,7 +178,12 @@ async def equity_curves(
     chart answer the only question that matters: did this beat just buying the
     index?
     """
-    stmt = select(Agent).where(Agent.is_active.is_(True))
+    # Ordered, and not incidentally: the dashboard assigns the baselines their
+    # line styles in the order the series arrive. Without an ORDER BY the
+    # database is free to return them either way round, and the two reference
+    # curves would swap dash patterns between reloads — the same failure as
+    # recolouring a series when a filter changes.
+    stmt = select(Agent).where(Agent.is_active.is_(True)).order_by(Agent.slug)
     if slugs:
         stmt = stmt.where(Agent.slug.in_([s.lower() for s in slugs]))
     agents = (await session.execute(stmt)).scalars().all()
